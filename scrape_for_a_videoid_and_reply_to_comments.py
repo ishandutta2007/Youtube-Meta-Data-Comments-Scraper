@@ -31,8 +31,7 @@ def get_authenticated_service():
 client = get_authenticated_service()
 
 if __name__ == '__main__':
-    videoId = eval(input("ID of youtube video : \n"))
-    video = scrape_metadata(videoId)
-    comments = scrape_comments(videoId)
-    add_data_to_csv(videoId, video.title, video.description, video.author, video.published, video.viewcount, video.duration, video.likes, video.dislikes, video.rating, video.category, comments)
-
+    video_id = eval(input("ID of youtube video : \n"))
+    video = scrape_metadata(video_id)
+    comments = scrape_comments(video_id)
+    add_data_to_csv(video_id, video.title, video.description, video.author, video.published, video.viewcount, video.duration, video.likes, video.dislikes, video.rating, video.category, comments)
