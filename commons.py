@@ -148,8 +148,7 @@ def reply_to_comment(comment_id, text):
     if text.find('congratulations')>=0 or text.find('congrats')>=0:
         comments_insert(client,
             {'snippet.parentId': comment_id,
-            'snippet.textOriginal': "Thank y
-            ,
+            'snippet.textOriginal': "Thank you"},
             part='snippet')
 
 def scrape_comments(video_id, max_comment_fetch_limit=10000, is_reply = True):
