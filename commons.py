@@ -19,6 +19,13 @@ from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
 import constants
 
+def get_authenticated_service():
+    flow = InstalledAppFlow.from_client_secrets_file(constants.CLIENT_SECRETS_FILE, constants.SCOPES)
+    credentials = flow.run_console()
+    return build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSION, credentials = credentials)
+
+client = get_authenticated_service()
+
 youtube = build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSION, developerKey=constants.DEVELOPER_KEY)
 
 def fetch_results(nextPageToken, video_id):
@@ -137,13 +144,15 @@ def add_data_to_csv(vID, title, description, author, published, viewcount, durat
         wr = csv.writer(fp, dialect='excel')
         wr.writerow(data)
 
-def is_comment_X(text):
-    # TODO
-    if text == 'Bla bla words':
-        return True
-    return False
+def reply_to_comment(comment_id, text):
+    if text.find('congratulations')>=0 or text.find('congrats')>=0:
+        comments_insert(client,
+            {'snippet.parentId': comment_id,
+            'snippet.textOriginal': "Thank y
+            ,
+            part='snippet')
 
-def scrape_comments(video_id, max_comment_fetch_limit=10000):
+def scrape_comments(video_id, max_comment_fetch_limit=10000, is_reply = True):
     count = 0
     comments = []
     next_page_token = ''
@@ -154,11 +163,8 @@ def scrape_comments(video_id, max_comment_fetch_limit=10000):
             count += totalResults
             for item in results["items"]:
                 comment_id, author, text = process_and_print_comment(len(comments), item)
-                if is_comment_X(text):
-                    comments_insert(client,
-                        {'snippet.parentId': comment_id,
-                        'snippet.textOriginal': "Thank you"},
-                        part='snippet')
+                if is_reply:
+                    reply_to_comment(comment_id, text)
                 comments.append([author, text])
 
             print("fetched %d more comments, total comments count: %d" % (totalResults, count))

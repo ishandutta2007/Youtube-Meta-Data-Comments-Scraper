@@ -16,7 +16,7 @@ youtube = build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSIO
 def get_data(video_id):
     print("\n\nScraping videoId %s" % video_id)
     video = scrape_metadata(video_id)
-    comments = scrape_comments(video_id)
+    comments = scrape_comments(video_id, 10000, False)
     add_data_to_csv(video_id, video.title, video.description, video.author, video.published, video.viewcount, video.duration, video.likes, video.dislikes, video.rating, video.category, comments)
 
 if __name__ == '__main__':

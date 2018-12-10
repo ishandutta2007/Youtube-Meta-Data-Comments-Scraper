@@ -23,13 +23,6 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 pafy.set_api_key(constants.DEVELOPER_KEY)
 # youtube = build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSION, developerKey=constants.DEVELOPER_KEY)
 
-def get_authenticated_service():
-    flow = InstalledAppFlow.from_client_secrets_file(constants.CLIENT_SECRETS_FILE, constants.SCOPES)
-    credentials = flow.run_console()
-    return build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSION, credentials = credentials)
-
-client = get_authenticated_service()
-
 if __name__ == '__main__':
     video_id = eval(input("ID of youtube video : \n"))
     video = scrape_metadata(video_id)
