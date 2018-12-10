@@ -3,6 +3,6 @@ Cache
 __pycache__
 .DS_Store
 .vscode
-*.txt
+config.txt
 *.json
 *.csv

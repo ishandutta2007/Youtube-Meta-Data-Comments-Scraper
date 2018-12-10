@@ -102,11 +102,10 @@ def print_comment(len_comments, author, delta, text):
 
 def process_and_print_comment(len_comments, item):
     comment = item["snippet"]["topLevelComment"]
-    commentID = item['id']
     author = comment["snippet"]["authorDisplayName"]
     text = comment["snippet"]["textDisplay"]
     # print_comment(len_comments, author, datetime.now() - datetime.strptime(comment["snippet"]["publishedAt"],"%Y-%m-%dT%H:%M:%S.000Z"), text)
-    return commentID, author, text
+    return author, text
 
 def fetch_results(nextPageToken):
     results = youtube.commentThreads().list(
@@ -118,6 +117,12 @@ def fetch_results(nextPageToken):
             ).execute()
     totalResults = int(results["pageInfo"]["totalResults"])
     return totalResults, results
+
+def add_data_to_csv(vID,title,description,author,published,viewcount, duration, likes, dislikes,rating,category,comments):
+    data = [vID,title,description,author,published,viewcount, duration, likes, dislikes,rating,category,comments]
+    with open("scraper.csv", "a") as fp:
+        wr = csv.writer(fp, dialect='excel')
+        wr.writerow(data)
 
 def scrape_metadata(videoId):
     url = "https://www.youtube.com/watch?v=" + videoId
@@ -131,6 +136,7 @@ def scrape_metadata(videoId):
     print('video.likes:', video.likes)
     print('video.dislikes:', video.dislikes)
     print('video.description:', video.description)
+    add_data_to_csv(videoId,video.title,video.description,video.author,video.published,video.viewcount, video.duration, video.likes, video.dislikes,video.rating,video.category,comments)
 
 def scrape_comments(videoId):
     count = 0
@@ -142,8 +148,8 @@ def scrape_comments(videoId):
 
             count += totalResults
             for item in results["items"]:
-                commentID, author, text = process_and_print_comment(len(comments), item)
-                comments.append([author,text])
+                author, text = process_and_print_comment(len(comments), item)
+                comments.append([author, text])
 
             print("fetched %d more, total count: %d" % (totalResults, count))
             next_page_token = results["nextPageToken"]
@@ -155,13 +161,7 @@ def scrape_comments(videoId):
             print('possibly last page reached, ie results["nextPageToken"] not found')
             traceback.print_exc()
             break
-    # print(comments)
-
-def add_data(vID,title,description,author,published,viewcount, duration, likes, dislikes,rating,category,comments):
-    data = [vID,title,description,author,published,viewcount, duration, likes, dislikes,rating,category,comments]
-    with open("scraper.csv", "a") as fp:
-        wr = csv.writer(fp, dialect='excel')
-        wr.writerow(data)
+    print(comments)
 
 if __name__ == '__main__':
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -170,5 +170,3 @@ if __name__ == '__main__':
     videoId = eval(input("ID of youtube video : \n"))
     scrape_metadata(videoId)
     scrape_comments(videoId)
-    add_data(videoId,video.title,video.description,video.author,video.published,video.viewcount, video.duration, video.likes, video.dislikes,video.rating,video.category,comments)
-
