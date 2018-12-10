@@ -102,10 +102,11 @@ def print_comment(len_comments, author, delta, text):
 
 def process_and_print_comment(len_comments, item):
     comment = item["snippet"]["topLevelComment"]
+    comment_id = item['id']
     author = comment["snippet"]["authorDisplayName"]
     text = comment["snippet"]["textDisplay"]
     # print_comment(len_comments, author, datetime.now() - datetime.strptime(comment["snippet"]["publishedAt"],"%Y-%m-%dT%H:%M:%S.000Z"), text)
-    return author, text
+    return comment_id, author, text
 
 def fetch_results(nextPageToken):
     results = youtube.commentThreads().list(
@@ -138,6 +139,12 @@ def scrape_metadata(videoId):
     print('video.description:', video.description)
     add_data_to_csv(videoId,video.title,video.description,video.author,video.published,video.viewcount, video.duration, video.likes, video.dislikes,video.rating,video.category,comments)
 
+def is_comment_X(text):
+    # TODO
+    if text == 'Bla bla words':
+        return True
+    return False
+
 def scrape_comments(videoId):
     count = 0
     comments = []
@@ -148,7 +155,12 @@ def scrape_comments(videoId):
 
             count += totalResults
             for item in results["items"]:
-                author, text = process_and_print_comment(len(comments), item)
+                comment_id, author, text = process_and_print_comment(len(comments), item)
+                if is_comment_X(text):
+                    comments_insert(client,
+                        {'snippet.parentId': comment_id,
+                        'snippet.textOriginal': "Thank you"},
+                        part='snippet')
                 comments.append([author, text])
 
             print("fetched %d more, total count: %d" % (totalResults, count))
