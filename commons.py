@@ -178,7 +178,7 @@ def reply_to_comment(client, comment_id, text):
             'snippet.textOriginal': "Thank you"},
             part='snippet')
 
-def scrape_comments(client, youtube, video_id, max_comment_fetch_limit=10000, is_reply = True):
+def scrape_comments_and_reply(client, youtube, video_id, max_comment_fetch_limit=10000, is_reply = True):
     count = 0
     comments = []
     next_page_token = ''

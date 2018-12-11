@@ -9,7 +9,7 @@ from commons import get_authenticated_service, fetch_results, scrape_metadata, s
 def get_data(client, youtube, video_id):
     print("\n\nScraping videoId %s" % video_id)
     video = scrape_metadata(video_id)
-    comments = scrape_comments(client, youtube, video_id, 10000, False)
+    comments = scrape_comments_and_reply(client, youtube, video_id, 10000, False)
     add_data_to_csv(video_id, video.title, video.description, video.author, video.published, video.viewcount, video.duration, video.likes, video.dislikes, video.rating, video.category, comments)
 
 if __name__ == '__main__':
