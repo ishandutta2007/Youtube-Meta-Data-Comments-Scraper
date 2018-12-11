@@ -3,6 +3,7 @@ from apiclient.discovery import build
 from oauth2client.tools import argparser
 import pafy
 import csv
+import os
 from datetime import date, datetime, timedelta
 import traceback
 

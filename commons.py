@@ -71,16 +71,16 @@ def get_authenticated_service():
     flow.fetch_token(code=code)
     return build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSION, credentials = flow.credentials)
 
-def fetch_results(youtube, nextPageToken, video_id):
+def fetch_results(youtube, next_page_token, video_id):
     results = youtube.commentThreads().list(
                 part="snippet",
                 maxResults=100,
                 videoId=video_id,
                 textFormat="plainText",
-                pageToken=nextPageToken
+                pageToken=next_page_token
             ).execute()
-    totalResults = int(results["pageInfo"]["totalResults"])
-    return totalResults, results
+    total_results = int(results["pageInfo"]["totalResults"])
+    return total_results, results
 
 def print_response(response):
     print(response)
@@ -165,8 +165,8 @@ def scrape_metadata(video_id):
     print('video.description:', video.description)
     return video
 
-def add_data_to_csv(vID, title, description, author, published, viewcount, duration, likes, dislikes, rating, category, comments):
-    data = [vID, title, description, author, published, viewcount, duration, likes, dislikes, rating, category, comments]
+def add_data_to_csv(video_id, title, description, author, published, viewcount, duration, likes, dislikes, rating, category, comments):
+    data = [video_id, title, description, author, published, viewcount, duration, likes, dislikes, rating, category, comments]
     with open("scraper.csv", "a") as fp:
         wr = csv.writer(fp, dialect='excel')
         wr.writerow(data)
@@ -184,16 +184,15 @@ def scrape_comments(client, youtube, video_id, max_comment_fetch_limit=10000, is
     next_page_token = ''
     while True:
         try:
-            totalResults, results = fetch_results(youtube, next_page_token, video_id)
-
-            count += totalResults
+            total_results, results = fetch_results(youtube, next_page_token, video_id)
+            count += total_results
             for item in results["items"]:
                 comment_id, author, text = process_and_print_comment(len(comments), item)
                 if is_reply:
                     reply_to_comment(client, comment_id, text)
                 comments.append([author, text])
 
-            print("fetched %d more comments, total comments count: %d" % (totalResults, count))
+            print("fetched %d more comments, total comments count: %d" % (total_results, count))
             if count > max_comment_fetch_limit:
                 print('MAx comment fetch limit reached, exiting loop')
                 break
