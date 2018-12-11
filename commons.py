@@ -4,11 +4,6 @@ from oauth2client.tools import argparser
 import pafy
 import csv
 from datetime import date, datetime, timedelta
-import sys
-import imp
-# imp.reload(sys)
-# sys.setdefaultencoding('utf8')  
-import os
 import traceback
 
 import google.oauth2.credentials
@@ -19,16 +14,64 @@ from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
 import constants
 
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
+
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException, ElementNotVisibleException, \
+    UnexpectedAlertPresentException, WebDriverException
+from selenium.webdriver.support.select import Select
+import time
+
+def selenium_authorise(auth_url):
+    try:
+        print('Authorising via Selenium Launched')
+        chrome_options = Options()
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--profile-directory=Default')
+        chrome_options.add_argument("--incognito")
+        chrome_options.add_argument("--disable-plugins-discovery")
+        chrome_options.add_argument("--headless")
+
+        driver = webdriver.Chrome(chrome_options=chrome_options, executable_path=constants.CHROME_DRIVER_PATH)
+        driver.get(auth_url)
+
+        time.sleep(2)
+        goog_email_element = driver.find_element_by_id("identifierId")
+        goog_email_element.send_keys(constants.GOOG_ID)
+        goog_email_element.send_keys(Keys.ENTER)
+        time.sleep(2)
+        goog_pass_element = driver.find_element_by_xpath("//*[@id='password']/div[1]/div/div[1]/input")
+        goog_pass_element.send_keys(constants.GOOG_PASS)
+        goog_pass_element.send_keys(Keys.ENTER)
+        print('Authorising via Selenium. Loggingin...')
+        time.sleep(5)
+
+        allow_button = driver.find_element_by_id('submit_approve_access')
+        allow_button.click()
+        print('Authorising via Selenium. Submitting Approval...')
+        time.sleep(5)
+
+        code_input = driver.find_element_by_id('code')
+        code_value = code_input.get_attribute('value')
+        print('Authorising via Selenium. Fetched authorization code:', code_value)
+        time.sleep(5)
+        driver.quit()
+        return code_value
+    except Exception:
+        traceback.print_exc()
+        driver.quit()
+
 def get_authenticated_service():
     flow = InstalledAppFlow.from_client_secrets_file(constants.CLIENT_SECRETS_FILE, constants.SCOPES)
-    credentials = flow.run_console()
-    return build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSION, credentials = credentials)
+    flow.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
+    auth_url, _ = flow.authorization_url(prompt='consent')
+    code = selenium_authorise(auth_url)
+    flow.fetch_token(code=code)
+    return build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSION, credentials = flow.credentials)
 
-client = get_authenticated_service()
-
-youtube = build(constants.YOUTUBE_API_SERVICE_NAME, constants.YOUTUBE_API_VERSION, developerKey=constants.DEVELOPER_KEY)
-
-def fetch_results(nextPageToken, video_id):
+def fetch_results(youtube, nextPageToken, video_id):
     results = youtube.commentThreads().list(
                 part="snippet",
                 maxResults=100,
@@ -45,39 +88,25 @@ def print_response(response):
 def build_resource(properties):
     resource = {}
     for p in properties:
-        # Given a key like "snippet.title", split into "snippet" and "title", where
-        # "snippet" will be an object and "title" will be a property in that object.
         prop_array = p.split('.')
         ref = resource
         for pa in range(0, len(prop_array)):
             is_array = False
             key = prop_array[pa]
-
-            # For properties that have array values, convert a name like
-            # "snippet.tags[]" to snippet.tags, and set a flag to handle
-            # the value as an array.
             if key[-2:] == '[]':
                 key = key[0:len(key)-2:]
                 is_array = True
 
             if pa == (len(prop_array) - 1):
-                # Leave properties without values out of inserted resource.
                 if properties[p]:
                     if is_array:
                         ref[key] = properties[p].split(',')
                     else:
                         ref[key] = properties[p]
             elif key not in ref:
-                # For example, the property is "snippet.title", but the resource does
-                # not yet have a "snippet" object. Create the snippet object here.
-                # Setting "ref = ref[key]" means that in the next time through the
-                # "for pa in range ..." loop, we will be setting a property in the
-                # resource's "snippet" object.
                 ref[key] = {}
                 ref = ref[key]
             else:
-                # For example, the property is "snippet.description", and the resource
-                # already has a "snippet" object.
                 ref = ref[key]
     return resource
 
@@ -122,7 +151,6 @@ def process_and_print_comment(len_comments, item):
     # print_comment(len_comments, author, datetime.now() - datetime.strptime(comment["snippet"]["publishedAt"],"%Y-%m-%dT%H:%M:%S.000Z"), text)
     return comment_id, author, text
 
-
 def scrape_metadata(video_id):
     url = "https://www.youtube.com/watch?v=" + video_id
     video = pafy.new(url)
@@ -137,33 +165,32 @@ def scrape_metadata(video_id):
     print('video.description:', video.description)
     return video
 
-
 def add_data_to_csv(vID, title, description, author, published, viewcount, duration, likes, dislikes, rating, category, comments):
     data = [vID, title, description, author, published, viewcount, duration, likes, dislikes, rating, category, comments]
     with open("scraper.csv", "a") as fp:
         wr = csv.writer(fp, dialect='excel')
         wr.writerow(data)
 
-def reply_to_comment(comment_id, text):
+def reply_to_comment(client, comment_id, text):
     if text.find('congratulations')>=0 or text.find('congrats')>=0:
         comments_insert(client,
             {'snippet.parentId': comment_id,
             'snippet.textOriginal': "Thank you"},
             part='snippet')
 
-def scrape_comments(video_id, max_comment_fetch_limit=10000, is_reply = True):
+def scrape_comments(client, youtube, video_id, max_comment_fetch_limit=10000, is_reply = True):
     count = 0
     comments = []
     next_page_token = ''
     while True:
         try:
-            totalResults, results = fetch_results(next_page_token, video_id)
+            totalResults, results = fetch_results(youtube, next_page_token, video_id)
 
             count += totalResults
             for item in results["items"]:
                 comment_id, author, text = process_and_print_comment(len(comments), item)
                 if is_reply:
-                    reply_to_comment(comment_id, text)
+                    reply_to_comment(client, comment_id, text)
                 comments.append([author, text])
 
             print("fetched %d more comments, total comments count: %d" % (totalResults, count))

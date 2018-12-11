@@ -13,3 +13,4 @@ YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
 
+CHROME_DRIVER_PATH = '/Users/ishandutta2007/Documents/Projects/chromium/chromium/src/out/Default/chromedriver_gleam'
