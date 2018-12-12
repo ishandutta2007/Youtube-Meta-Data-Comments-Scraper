@@ -1,10 +1,11 @@
 # Youtube Videos Metadata & Comments Scraper
 Python scripts to scrape the Metadata and comments for Youtube Videos.
 
-Functionalities:
-1.Search top N results from a search query
-2.Scrape comments from a given video id
-3.Reply to specific comments
+## Functionalities:
+1. Search top N results from a search query
+2. Scrape comments from a given video id
+3. Reply to specific comments
+4. Fetch username(possibly same as emailid) of commenters
 
 First of all, we need to have `DEVELOPER_KEY` of YoutubeDataAPI for this script to work. You can grab them <a href="https://console.developers.google.com" target="_blank">here</a>.
 

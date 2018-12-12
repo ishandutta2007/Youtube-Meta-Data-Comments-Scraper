@@ -14,7 +14,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-from commons import get_authenticated_service, fetch_results, scrape_metadata, scrape_comments, add_data_to_csv
+from commons import get_authenticated_service, fetch_results, scrape_metadata, scrape_comments_and_reply, add_data_to_csv
 import constants
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 

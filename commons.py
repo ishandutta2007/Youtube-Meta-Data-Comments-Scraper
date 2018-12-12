@@ -6,6 +6,7 @@ import csv
 from datetime import date, datetime, timedelta
 import traceback
 
+import pprint as pp
 import google.oauth2.credentials
 
 import google_auth_oauthlib.flow
@@ -32,7 +33,7 @@ def selenium_authorise(auth_url):
         chrome_options.add_argument('--profile-directory=Default')
         chrome_options.add_argument("--incognito")
         chrome_options.add_argument("--disable-plugins-discovery")
-        chrome_options.add_argument("--headless")
+        # chrome_options.add_argument("--headless")
 
         driver = webdriver.Chrome(chrome_options=chrome_options, executable_path=constants.CHROME_DRIVER_PATH)
         driver.get(auth_url)
@@ -51,7 +52,7 @@ def selenium_authorise(auth_url):
         allow_button = driver.find_element_by_id('submit_approve_access')
         allow_button.click()
         print('Authorising via Selenium. Submitting Approval...')
-        time.sleep(5)
+        time.sleep(10)
 
         code_input = driver.find_element_by_id('code')
         code_value = code_input.get_attribute('value')
@@ -143,6 +144,27 @@ def print_comment(len_comments, author, delta, text):
     else:
         print(len_comments  , author, str(delta.seconds)+ " seconds ago", text)
 
+def channels_list_by_id(youtube, **kwargs):
+    kwargs = remove_empty_kwargs(**kwargs)
+
+    response = youtube.channels().list(
+    **kwargs
+    ).execute()
+
+    return response
+
+def retrieve_username(youtube, item):
+    response = channels_list_by_id(youtube,
+        part='snippet',
+        id = item["snippet"]["topLevelComment"]['snippet']['authorChannelId']['value'])
+
+    try:
+        customUrl = response['items'][0]['snippet']['customUrl']
+        with open("username.csv", "a") as fp:
+            fp.write(customUrl + '\n')
+        print('customUrl', customUrl)
+    except Exception:
+
 def process_and_print_comment(len_comments, item):
     comment = item["snippet"]["topLevelComment"]
     comment_id = item['id']
@@ -188,6 +210,9 @@ def scrape_comments_and_reply(client, youtube, video_id, max_comment_fetch_limit
             count += total_results
             for item in results["items"]:
                 comment_id, author, text = process_and_print_comment(len(comments), item)
+
+                retrieve_username(youtube, item)
+
                 if is_reply:
                     reply_to_comment(client, comment_id, text)
                 comments.append([author, text])
