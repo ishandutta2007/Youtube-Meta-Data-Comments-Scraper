@@ -147,3 +147,10 @@ for search_result in search_response.get("items", []):
 You can checkout the full scripts in this repo [here](https://github.com/Sunil02324/Youtube-Meta-Data-Comments-Scraper). Fork it or Star if you like it. 
 
 You can mail me at <a href="mailto:sunil@suniltatipelly.in">sunil@suniltatipelly.in</a> for any queries or doubts regarding this.
+
+### Support:
+
+If you want the good work to continue please support us on
+
+* [PAYPAL](https://www.paypal.me/ishandutta2007)
+* [BITCOIN ADDRESS: 3LZazKXG18Hxa3LLNAeKYZNtLzCxpv1LyD](https://www.coinbase.com/join/5a8e4a045b02c403bc3a9c0c)
